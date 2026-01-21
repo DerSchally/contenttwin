@@ -95,7 +95,11 @@ export async function scoreAndFilterTrends(
       if (scoring.relevanceScore >= minRelevanceScore) {
         scoredTrends.push({
           ...trend,
-          ...scoring,
+          relevance_score: scoring.relevanceScore,
+          matched_pillars: scoring.matchedPillars,
+          has_conflict: scoring.hasConflict,
+          conflict_reason: scoring.conflictReason,
+          suggested_angle: scoring.suggestedAngle,
           trending_score: trendingScore,
         })
       }
