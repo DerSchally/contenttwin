@@ -149,7 +149,7 @@ export async function enrichPillarsWithDecks(
     deckEvidence?: string[] // Quotes from decks
   }>
 > {
-  const enrichedPillars = [...postBasedPillars].map((p) => ({ ...p, sources: ['posts'] as string[] }))
+  const enrichedPillars = [...postBasedPillars].map((p) => ({ ...p, sources: ['posts'] as string[], deckEvidence: undefined as string[] | undefined }))
 
   // Match deck pillars to post pillars and enrich
   for (const deckPillar of deckAnalysis.suggestedPillars) {
