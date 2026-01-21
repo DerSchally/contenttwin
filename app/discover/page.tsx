@@ -28,6 +28,7 @@ interface TopicSuggestion {
 export default function DiscoverPage() {
   // Step 1: Discover Pillars
   const [posts, setPosts] = useState('')
+  const [decks, setDecks] = useState('') // NEW: Deck content
   const [showPostsInput, setShowPostsInput] = useState(true)
   const [isDiscovering, setIsDiscovering] = useState(false)
   const [pillars, setPillars] = useState<DiscoveredPillar[]>([])
@@ -43,7 +44,7 @@ export default function DiscoverPage() {
 
   const [error, setError] = useState<string | null>(null)
 
-  // Discover pillars from posts
+  // Discover pillars from posts and decks
   const handleDiscoverPillars = async () => {
     const postArray = posts
       .split('---')
@@ -59,10 +60,21 @@ export default function DiscoverPage() {
     setError(null)
 
     try {
+      // Parse deck content if provided
+      const deckArray = decks
+        ? decks
+            .split('######') // Deck separator
+            .map((d) => d.trim())
+            .filter((d) => d.length > 100)
+        : []
+
       const response = await fetch('/api/discover/pillars', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ posts: postArray }),
+        body: JSON.stringify({
+          posts: postArray,
+          decks: deckArray.length > 0 ? deckArray : undefined,
+        }),
       })
 
       const result = await response.json()
@@ -192,13 +204,16 @@ export default function DiscoverPage() {
 
           {showPostsInput && (
             <div className="p-6 space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Paste 5-10 of your past posts below, separated by --- (three dashes)
-              </p>
-              <textarea
-                value={posts}
-                onChange={(e) => setPosts(e.target.value)}
-                placeholder={`First post goes here...
+              {/* Posts Input */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Your Posts</label>
+                <p className="text-sm text-muted-foreground">
+                  Paste 5-10 of your past posts below, separated by --- (three dashes)
+                </p>
+                <textarea
+                  value={posts}
+                  onChange={(e) => setPosts(e.target.value)}
+                  placeholder={`First post goes here...
 
 ---
 
@@ -207,8 +222,39 @@ Second post goes here...
 ---
 
 Third post goes here...`}
-                className="w-full h-64 px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none font-mono text-sm"
-              />
+                  className="w-full h-64 px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none font-mono text-sm"
+                />
+              </div>
+
+              {/* Deck Input */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Your Presentation Decks{' '}
+                  <span className="text-muted-foreground font-normal">(Optional)</span>
+                </label>
+                <p className="text-sm text-muted-foreground">
+                  Paste slide text from your decks. Separate multiple decks with ###### (six hashes)
+                </p>
+                <textarea
+                  value={decks}
+                  onChange={(e) => setDecks(e.target.value)}
+                  placeholder={`=== Slide 1 ===
+Title: Your Main Idea
+Body text explaining the concept...
+
+=== Slide 2 ===
+Key point with supporting data...
+
+######
+
+Next deck starts here...`}
+                  className="w-full h-48 px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Tip: Copy slide text from PowerPoint/Keynote or export to PDF and paste text
+                </p>
+              </div>
+
               <button
                 onClick={handleDiscoverPillars}
                 disabled={isDiscovering || posts.trim().length === 0}
@@ -325,16 +371,31 @@ Third post goes here...`}
 }
 
 // Pillar Card Component
-function PillarCard({ pillar }: { pillar: DiscoveredPillar }) {
+function PillarCard({ pillar }: { pillar: DiscoveredPillar & { sources?: string[]; deckEvidence?: string[] } }) {
   return (
     <div className="p-4 border border-border rounded-lg hover:bg-muted/30 transition-colors">
       <div className="flex items-start justify-between mb-2">
-        <h3 className="font-semibold">{pillar.name}</h3>
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold">{pillar.name}</h3>
+          {pillar.sources && pillar.sources.length > 1 && (
+            <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded">
+              posts + decks
+            </span>
+          )}
+        </div>
         <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
           {pillar.confidence}% confidence
         </span>
       </div>
       <p className="text-sm text-muted-foreground mb-3">{pillar.description}</p>
+
+      {pillar.deckEvidence && pillar.deckEvidence.length > 0 && (
+        <div className="mb-3 p-2 bg-accent/5 rounded border border-accent/10">
+          <p className="text-xs font-medium text-accent mb-1">From your decks:</p>
+          <p className="text-xs text-muted-foreground italic">"{pillar.deckEvidence[0]}"</p>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2">
         {pillar.example_topics.map((topic, i) => (
           <span key={i} className="text-xs bg-muted px-2 py-1 rounded">
