@@ -136,13 +136,15 @@ GUIDELINES:
  * Combine deck analysis with post analysis for richer pillar discovery
  */
 export async function enrichPillarsWithDecks(
-  postBasedPillars: Array<{ name: string; description: string; confidence: number }>,
+  postBasedPillars: Array<{ name: string; description: string; confidence: number; example_topics: string[]; post_count: number }>,
   deckAnalysis: DeckAnalysisResult
 ): Promise<
   Array<{
     name: string
     description: string
     confidence: number
+    example_topics: string[]
+    post_count: number
     sources: string[] // e.g., ["posts", "decks"]
     deckEvidence?: string[] // Quotes from decks
   }>
@@ -172,6 +174,8 @@ export async function enrichPillarsWithDecks(
           name: deckPillar.name,
           description: `Identified from presentation decks: ${deckPillar.evidence[0] || 'recurring theme'}`,
           confidence: deckPillar.confidence,
+          example_topics: [], // No example topics from decks alone
+          post_count: 0, // Not from posts
           sources: ['decks'],
           deckEvidence: deckPillar.evidence,
         })
