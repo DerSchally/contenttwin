@@ -27,8 +27,8 @@ interface TopicSuggestion {
 
 export default function DiscoverPage() {
   // Step 1: Discover Pillars
-  const [posts, setPosts] = useState('')
-  const [decks, setDecks] = useState('') // NEW: Deck content
+  const [postLinks, setPostLinks] = useState<string[]>([''])
+  const [deckFiles, setDeckFiles] = useState<File[]>([])
   const [showPostsInput, setShowPostsInput] = useState(true)
   const [isDiscovering, setIsDiscovering] = useState(false)
   const [pillars, setPillars] = useState<DiscoveredPillar[]>([])
@@ -44,15 +44,34 @@ export default function DiscoverPage() {
 
   const [error, setError] = useState<string | null>(null)
 
+  const addPostLink = () => {
+    setPostLinks([...postLinks, ''])
+  }
+
+  const updatePostLink = (index: number, value: string) => {
+    const newLinks = [...postLinks]
+    newLinks[index] = value
+    setPostLinks(newLinks)
+  }
+
+  const removePostLink = (index: number) => {
+    if (postLinks.length > 1) {
+      setPostLinks(postLinks.filter((_, i) => i !== index))
+    }
+  }
+
+  const handleDeckUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setDeckFiles(Array.from(e.target.files))
+    }
+  }
+
   // Discover pillars from posts and decks
   const handleDiscoverPillars = async () => {
-    const postArray = posts
-      .split('---')
-      .map((p) => p.trim())
-      .filter((p) => p.length > 0)
+    const validLinks = postLinks.filter((link) => link.trim().length > 0)
 
-    if (postArray.length < 3) {
-      setError('Please provide at least 3 posts separated by ---')
+    if (validLinks.length < 3) {
+      setError('Please provide at least 3 post links')
       return
     }
 
@@ -60,20 +79,14 @@ export default function DiscoverPage() {
     setError(null)
 
     try {
-      // Parse deck content if provided
-      const deckArray = decks
-        ? decks
-            .split('######') // Deck separator
-            .map((d) => d.trim())
-            .filter((d) => d.length > 100)
-        : []
-
+      // TODO: Fetch content from links using a scraper/API
+      // For now, we'll send the links as-is
       const response = await fetch('/api/discover/pillars', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          posts: postArray,
-          decks: deckArray.length > 0 ? deckArray : undefined,
+          postLinks: validLinks,
+          // TODO: Handle deck file uploads
         }),
       })
 
@@ -203,61 +216,102 @@ export default function DiscoverPage() {
           </button>
 
           {showPostsInput && (
-            <div className="p-6 space-y-4">
-              {/* Posts Input */}
-              <div className="space-y-2">
+            <div className="p-6 space-y-6">
+              {/* Post Links Input */}
+              <div className="space-y-3">
                 <label className="text-sm font-medium">Your Posts</label>
                 <p className="text-sm text-muted-foreground">
-                  Paste 5-10 of your past posts below, separated by --- (three dashes)
+                  Add links to your LinkedIn posts or articles (minimum 3)
                 </p>
-                <textarea
-                  value={posts}
-                  onChange={(e) => setPosts(e.target.value)}
-                  placeholder={`First post goes here...
-
----
-
-Second post goes here...
-
----
-
-Third post goes here...`}
-                  className="w-full h-64 px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none font-mono text-sm"
-                />
+                {postLinks.map((link, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      type="url"
+                      value={link}
+                      onChange={(e) => updatePostLink(index, e.target.value)}
+                      placeholder="https://www.linkedin.com/posts/..."
+                      className="flex-1 px-4 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+                    />
+                    {postLinks.length > 1 && (
+                      <button
+                        onClick={() => removePostLink(index)}
+                        className="px-3 py-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={addPostLink}
+                  className="text-sm text-primary hover:text-primary-dark font-medium flex items-center gap-1"
+                >
+                  + Add another link
+                </button>
               </div>
 
-              {/* Deck Input */}
+              {/* Deck PDF Upload */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">
                   Your Presentation Decks{' '}
                   <span className="text-muted-foreground font-normal">(Optional)</span>
                 </label>
                 <p className="text-sm text-muted-foreground">
-                  Paste slide text from your decks. Separate multiple decks with ###### (six hashes)
+                  Upload PDF files of your presentation decks
                 </p>
-                <textarea
-                  value={decks}
-                  onChange={(e) => setDecks(e.target.value)}
-                  placeholder={`=== Slide 1 ===
-Title: Your Main Idea
-Body text explaining the concept...
-
-=== Slide 2 ===
-Key point with supporting data...
-
-######
-
-Next deck starts here...`}
-                  className="w-full h-48 px-4 py-3 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none font-mono text-sm"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Tip: Copy slide text from PowerPoint/Keynote or export to PDF and paste text
-                </p>
+                <div className="border-2 border-dashed border-border rounded-lg p-6 hover:border-primary/50 transition-colors">
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    multiple
+                    onChange={handleDeckUpload}
+                    className="hidden"
+                    id="deck-upload"
+                  />
+                  <label
+                    htmlFor="deck-upload"
+                    className="flex flex-col items-center justify-center cursor-pointer"
+                  >
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                      <svg
+                        className="w-6 h-6 text-primary"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-medium mb-1">Click to upload PDFs</p>
+                    <p className="text-xs text-muted-foreground">or drag and drop</p>
+                  </label>
+                </div>
+                {deckFiles.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium">Uploaded files:</p>
+                    {deckFiles.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-2 text-xs bg-muted px-3 py-2 rounded"
+                      >
+                        <span className="flex-1">{file.name}</span>
+                        <span className="text-muted-foreground">
+                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <button
                 onClick={handleDiscoverPillars}
-                disabled={isDiscovering || posts.trim().length === 0}
+                disabled={isDiscovering || postLinks.filter((l) => l.trim()).length < 3}
                 className="w-full py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isDiscovering ? (
