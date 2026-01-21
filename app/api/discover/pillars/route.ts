@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
           data: null,
           error: 'Posts are too short. Each post should be at least 50 characters.',
         },
-        { status: 400 }  )
+        { status: 400 }
+      )
     }
 
     // Limit to first 20 posts for performance
