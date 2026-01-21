@@ -81,10 +81,13 @@ User Account
 /app
   /api
     /generate         # Content generation endpoint
-    /discover         # Topic/pillar discovery endpoints
+    /discover
+      /pillars        # Discover content pillars from posts
+      /topics         # Generate topic suggestions
+      /trends         # Score and filter trending topics
     (auth, personas, calendar, feedback endpoints to be added)
   /generate           # Generation UI page
-  /discover           # Topic discovery page
+  /discover           # Topic discovery and learning UI
   page.tsx            # Landing/dashboard page
   layout.tsx          # Root layout
 
@@ -93,9 +96,9 @@ User Account
     claude-client.ts       # Anthropic SDK wrapper
     content-generator.ts   # Main generation logic
     voice-analyzer.ts      # Voice profile extraction
-    pillar-discovery.ts    # Pillar & topic discovery
+    pillar-discovery.ts    # Pillar extraction and topic suggestions
   /trends
-    scanner.ts             # Trend scanning & scoring
+    scanner.ts             # Trend scanning and relevance scoring
   /supabase
     client.ts              # Supabase client singleton
     (queries.ts to be added)
@@ -247,13 +250,11 @@ FIRECRAWL_API_KEY=
 - Claude API client wrapper
 - Content generation endpoint (`/api/generate`)
 - Basic generation UI page
-- Voice analyzer implementation
-- **Pillar discovery system**
-- **Topic suggestion engine**
-- **Trend scanning with relevance scoring**
-- **Full topic discovery UI at `/discover`**
+- **Topic discovery system** (`/api/discover/pillars`, `/api/discover/topics`, `/api/discover/trends`)
+- **Full discovery UI** (`/discover` page with 3-step workflow)
 
 ### 🚧 In Progress
+- Voice analyzer implementation
 - Database schema setup
 - Authentication flow
 - Persona management
@@ -261,7 +262,7 @@ FIRECRAWL_API_KEY=
 ### 📋 Planned (See PLAN.md)
 - Phase 2: Feedback system and learning
 - Phase 3: Calendar and planning
-- Phase 4: Real-time trend scanning with Firecrawl
+- Phase 4: Trends and freshness
 - Phase 5: Multi-platform support
 
 ## Key Metrics to Track
